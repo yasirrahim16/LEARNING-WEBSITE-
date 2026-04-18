@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Termux Learning Hub</title>
+  <meta name="description" content="Animated Termux learning website with downloadable PDF guides for basics and explained commands." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    :root{
+      --bg:#050816;
+      --bg2:#081127;
+      --panel:rgba(10,16,36,.76);
+      --panel2:rgba(13,20,44,.9);
+      --line:rgba(120,180,255,.18);
+      --line2:rgba(255,255,255,.08);
+      --text:#eef5ff;
+      --muted:#a9b7d2;
+      --cyan:#47e6ff;
+      --violet:#8b5cf6;
+      --green:#3dffb4;
+      --pink:#ff4fd8;
+      --yellow:#ffd166;
+      --shadow:0 20px 70px rgba(0,0,0,.45);
+      --radius:24px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(71,230,255,.14), transparent 28%),
+        radial-gradient(circle at 80% 10%, rgba(139,92,246,.16), transparent 24%),
+        radial-gradient(circle at 80% 80%, rgba(61,255,180,.12), transparent 28%),
+        linear-gradient(135deg, #04060d 0%, #060b1b 50%, #03050a 100%);
+      overflow-x:hidden;
+    }
+    .bg-grid, .bg-grid::before{
+      position:fixed; inset:0; pointer-events:none; content:"";
+      background-image:
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size:72px 72px;
+      mask-image:linear-gradient(to bottom, rgba(0,0,0,.85), transparent 92%);
+      animation:gridMove 16s linear infinite;
+      opacity:.35;
+    }
+    .bg-grid::before{
+      background-size:120px 120px;
+      opacity:.2;
+      animation-duration:28s;
+    }
+    @keyframes gridMove{from{transform:translateY(0)}to{transform:translateY(72px)}}
+    .scanlines{
+      position:fixed; inset:0; pointer-events:none; opacity:.05;
+      background:repeating-linear-gradient(to bottom, #fff 0, #fff 1px, transparent 1px, transparent 4px);
+      mix-blend-mode:overlay;
+    }
+    .orb{
+      position:fixed; border-radius:50%; filter:blur(18px); opacity:.5; pointer-events:none;
+      animation:float 12s ease-in-out infinite;
+    }
+    .orb.one{width:220px;height:220px;left:-40px;top:40px;background:rgba(71,230,255,.18)}
+    .orb.two{width:260px;height:260px;right:-60px;top:140px;background:rgba(139,92,246,.16);animation-delay:-4s}
+    .orb.three{width:240px;height:240px;left:18%;bottom:-80px;background:rgba(61,255,180,.12);animation-delay:-8s}
+    @keyframes float{0%,100%{transform:translateY(0) translateX(0) scale(1)}50%{transform:translateY(-22px) translateX(12px) scale(1.06)}}
+    .wrap{width:min(1220px, calc(100% - 26px)); margin:0 auto; position:relative; z-index:1}
+    header{
+      padding:20px 0 12px;
+      display:flex; align-items:center; justify-content:space-between; gap:16px;
+      position:sticky; top:0; z-index:9;
+      backdrop-filter:blur(18px);
+      background:linear-gradient(to bottom, rgba(5,8,22,.84), rgba(5,8,22,.35), transparent);
+    }
+    .brand{display:flex; align-items:center; gap:12px; text-decoration:none; color:var(--text)}
+    .logo{
+      width:48px;height:48px;border-radius:15px;
+      background:linear-gradient(135deg, rgba(71,230,255,.95), rgba(139,92,246,.95));
+      box-shadow:0 0 0 8px rgba(71,230,255,.08), 0 0 30px rgba(139,92,246,.25);
+      position:relative; overflow:hidden;
+      flex:0 0 auto;
+    }
+    .logo::after{
+      content:"</>";
+      position:absolute; inset:0; display:grid; place-items:center;
+      font-weight:900; color:#06101a;
+      mix-blend-mode:screen;
+    }
+    .brand h1{margin:0; font-size:18px; letter-spacing:.3px}
+    .brand p{margin:2px 0 0; color:var(--muted); font-size:12px}
+    .nav-pill{
+      display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;
+    }
+    .nav-pill a{
+      color:var(--text); text-decoration:none; font-size:13px;
+      padding:10px 14px; border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03); border-radius:999px;
+      transition:.28s ease; position:relative; overflow:hidden;
+    }
+    .nav-pill a:hover{transform:translateY(-2px); border-color:rgba(71,230,255,.4); box-shadow:0 12px 24px rgba(0,0,0,.22)}
+    .hero{
+      padding:68px 0 22px;
+      display:grid; grid-template-columns:1.2fr .8fr; gap:24px; align-items:stretch;
+    }
+    .hero-card, .side-card, .feature, .pdf-card, .road-card, .faq, .preview, .note, .stat{
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(15,21,44,.82), rgba(8,12,25,.88));
+      box-shadow:var(--shadow);
+      border-radius:var(--radius);
+      position:relative; overflow:hidden;
+    }
+    .hero-card{padding:34px 30px 30px; min-height:470px}
+    .hero-card::before, .side-card::before, .feature::before, .pdf-card::before, .road-card::before, .faq::before, .note::before, .preview::before{
+      content:""; position:absolute; inset:-2px;
+      background:linear-gradient(120deg, transparent 10%, rgba(71,230,255,.08), transparent 30%, rgba(139,92,246,.12), transparent 60%);
+      transform:translateX(-120%); animation:shine 7s linear infinite;
+      pointer-events:none;
+    }
+    @keyframes shine{to{transform:translateX(120%)}}
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:9px 14px; border-radius:999px;
+      border:1px solid rgba(71,230,255,.28);
+      background:rgba(71,230,255,.08); color:#d9fbff; font-size:12px; font-weight:700;
+      letter-spacing:.5px; text-transform:uppercase;
+      animation:pulse 2.8s ease-in-out infinite;
+    }
+    @keyframes pulse{50%{transform:translateY(-1px); box-shadow:0 0 0 10px rgba(71,230,255,.04)}}
+    .glitch{
+      font-size:clamp(38px, 6vw, 72px); line-height:.94; margin:18px 0 16px; font-weight:900;
+      text-shadow:0 0 30px rgba(71,230,255,.18);
+      position:relative; display:inline-block;
+    }
+    .glitch::before, .glitch::after{
+      content:attr(data-text); position:absolute; left:0; top:0; width:100%;
+      background:transparent; overflow:hidden;
+    }
+    .glitch::before{transform:translate(2px,-1px); color:var(--cyan); clip-path:inset(0 0 48% 0); animation:gl1 3s infinite linear alternate-reverse}
+    .glitch::after{transform:translate(-2px,1px); color:var(--pink); clip-path:inset(52% 0 0 0); animation:gl2 2.3s infinite linear alternate-reverse}
+    @keyframes gl1{0%{clip-path:inset(0 0 84% 0)}20%{clip-path:inset(20% 0 40% 0)}40%{clip-path:inset(55% 0 18% 0)}60%{clip-path:inset(7% 0 72% 0)}80%{clip-path:inset(34% 0 38% 0)}100%{clip-path:inset(0 0 84% 0)}}
+    @keyframes gl2{0%{clip-path:inset(62% 0 0 0)}20%{clip-path:inset(40% 0 20% 0)}40%{clip-path:inset(18% 0 50% 0)}60%{clip-path:inset(72% 0 8% 0)}80%{clip-path:inset(32% 0 34% 0)}100%{clip-path:inset(62% 0 0 0)}}
+    .hero-card p{color:var(--muted); font-size:16px; line-height:1.8; max-width:760px}
+    .stats{display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin:24px 0}
+    .stat{padding:18px; border-radius:20px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); transition:.3s ease; animation:updown 4s ease-in-out infinite}
+    .stat:nth-child(2){animation-delay:-1.2s}
+    .stat:nth-child(3){animation-delay:-2.2s}
+    @keyframes updown{50%{transform:translateY(-4px)}}
+    .stat strong{display:block; font-size:28px; margin-bottom:6px}
+    .stat span{color:var(--muted); font-size:13px}
+    .actions{display:flex; gap:14px; flex-wrap:wrap; margin-top:18px}
+    .btn{
+      appearance:none; border:none; cursor:pointer; color:#03101a; font-weight:800;
+      padding:15px 20px; border-radius:16px; font-size:15px; letter-spacing:.2px;
+      position:relative; overflow:hidden; transform:translateZ(0);
+      transition:.25s ease;
+      min-width:180px;
+    }
+    .btn::after{
+      content:""; position:absolute; inset:-2px; background:linear-gradient(120deg, transparent, rgba(255,255,255,.38), transparent);
+      transform:translateX(-120%) skewX(-18deg); transition:0s;
+    }
+    .btn:hover::after{animation:btnshine .9s ease}
+    @keyframes btnshine{to{transform:translateX(120%) skewX(-18deg)}}
+    .btn-primary{background:linear-gradient(135deg, var(--cyan), #baf9ff)}
+    .btn-secondary{background:linear-gradient(135deg, #9b7bff, #d6c8ff)}
+    .btn-dark{background:linear-gradient(135deg, #49ffbe, #d4ffe9)}
+    .btn:hover{transform:translateY(-3px) scale(1.01); box-shadow:0 16px 30px rgba(0,0,0,.28)}
+    .side-card{padding:22px; min-height:470px; display:flex; flex-direction:column; gap:16px}
+    .terminal{
+      flex:1; border-radius:22px; border:1px solid rgba(71,230,255,.18);
+      background:linear-gradient(180deg, rgba(3,10,19,.88), rgba(7,14,26,.95));
+      padding:18px; overflow:hidden; position:relative;
+    }
+    .terminal::before{
+      content:""; position:absolute; inset:0;
+      background:radial-gradient(circle at 30% 10%, rgba(71,230,255,.12), transparent 26%),
+                 radial-gradient(circle at 80% 70%, rgba(139,92,246,.14), transparent 30%);
+      pointer-events:none;
+    }
+    .term-top{display:flex; gap:8px; margin-bottom:12px}
+    .dot{width:11px;height:11px;border-radius:50%}
+    .dot.red{background:#ff6b6b}.dot.yellow{background:#ffd166}.dot.green{background:#5fff98}
+    .term-line{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:13px; line-height:1.75; color:#d8e7ff}
+    .cursor{display:inline-block; width:8px; height:18px; background:var(--cyan); vertical-align:middle; animation:blink 1s steps(2) infinite}
+    @keyframes blink{50%{opacity:0}}
+    .section{padding:28px 0 12px}
+    .section h2{margin:0 0 10px; font-size:clamp(24px, 3vw, 38px)}
+    .section p.lead{margin:0 0 18px; color:var(--muted); line-height:1.8; max-width:900px}
+    .grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:16px}
+    .feature{padding:22px 20px 24px; min-height:190px; transition:.25s ease}
+    .feature:hover{transform:translateY(-4px); border-color:rgba(71,230,255,.4)}
+    .feature .icon{
+      width:54px;height:54px;border-radius:18px; display:grid; place-items:center;
+      background:linear-gradient(135deg, rgba(71,230,255,.18), rgba(139,92,246,.2));
+      border:1px solid rgba(255,255,255,.08); margin-bottom:14px; font-size:24px;
+      animation:spinPulse 7s linear infinite;
+    }
+    @keyframes spinPulse{0%{transform:rotate(0) scale(1)}50%{transform:rotate(8deg) scale(1.05)}100%{transform:rotate(0) scale(1)}}
+    .feature h3{margin:0 0 8px; font-size:18px}
+    .feature p{margin:0; color:var(--muted); line-height:1.7; font-size:14px}
+    .downloads{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+    .pdf-card{padding:22px; min-height:280px}
+    .pdf-card h3{margin:0 0 8px; font-size:21px}
+    .pdf-card p{margin:0 0 14px; color:var(--muted); line-height:1.7}
+    .mini-list{display:grid; gap:8px; margin:16px 0 20px}
+    .mini-list div{
+      padding:10px 12px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);
+      color:#dce8ff; font-size:13px;
+      animation:slideIn .6s ease both;
+    }
+    .mini-list div:nth-child(2){animation-delay:.08s}
+    .mini-list div:nth-child(3){animation-delay:.16s}
+    @keyframes slideIn{from{opacity:0; transform:translateY(10px)}to{opacity:1; transform:translateY(0)}}
+    .status{display:inline-flex; align-items:center; gap:8px; color:#d6ecff; font-size:13px}
+    .status i{width:10px;height:10px;border-radius:50%; background:var(--green); box-shadow:0 0 18px rgba(61,255,180,.65)}
+    .roadmap{
+      display:grid; grid-template-columns:repeat(4, 1fr); gap:16px;
+    }
+    .road-card{padding:20px; min-height:210px}
+    .road-card .step{font-weight:900; font-size:12px; letter-spacing:.2em; color:var(--cyan); text-transform:uppercase; margin-bottom:10px}
+    .road-card h3{margin:0 0 8px}
+    .road-card p{margin:0; color:var(--muted); line-height:1.75; font-size:14px}
+    .toolbar{
+      display:flex; gap:12px; flex-wrap:wrap; align-items:center;
+      margin: 8px 0 18px;
+    }
+    .input{
+      flex:1 1 260px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      border-radius:16px;
+      padding:14px 16px;
+      font-size:14px;
+      outline:none;
+      transition:.25s ease;
+    }
+    .input:focus{border-color:rgba(71,230,255,.45); box-shadow:0 0 0 4px rgba(71,230,255,.08)}
+    .chips{display:flex; gap:10px; flex-wrap:wrap}
+    .chip{
+      cursor:pointer; user-select:none;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      padding:10px 14px; border-radius:999px;
+      font-size:13px; color:var(--text);
+      transition:.22s ease;
+    }
+    .chip.active,.chip:hover{border-color:rgba(71,230,255,.45); background:rgba(71,230,255,.09); transform:translateY(-2px)}
+    .commands-grid{
+      display:grid; grid-template-columns:repeat(3, 1fr); gap:14px;
+    }
+    .cmd{
+      padding:18px 18px 16px;
+      border-radius:20px;
+      background:linear-gradient(180deg, rgba(16,23,48,.86), rgba(8,12,25,.94));
+      border:1px solid rgba(255,255,255,.08);
+      transition:.25s ease;
+      min-height:142px;
+    }
+    .cmd:hover{transform:translateY(-4px); border-color:rgba(139,92,246,.45)}
+    .cmd code{
+      display:inline-block;
+      padding:8px 10px;
+      border-radius:12px;
+      background:rgba(71,230,255,.08);
+      border:1px solid rgba(71,230,255,.16);
+      color:#e7fbff;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:12px;
+      margin-bottom:12px;
+    }
+    .cmd strong{display:block; margin-bottom:6px}
+    .cmd span{color:var(--muted); font-size:13px; line-height:1.7}
+    .preview{
+      padding:22px;
+    }
+    .preview-grid{
+      display:grid; grid-template-columns:1fr 1fr; gap:12px;
+      margin-top:14px;
+    }
+    .note{
+      padding:18px;
+      min-height:140px;
+    }
+    .note h3{margin:0 0 6px}
+    .note p{margin:0; color:var(--muted); line-height:1.7; font-size:14px}
+    .faq{
+      padding:18px 20px;
+      margin-bottom:12px;
+      transition:.25s ease;
+    }
+    .faq summary{
+      cursor:pointer;
+      list-style:none;
+      font-weight:700;
+      font-size:16px;
+    }
+    .faq summary::-webkit-details-marker{display:none}
+    .faq p{color:var(--muted); line-height:1.75; margin:12px 0 0}
+    .footer{
+      padding: 24px 0 40px;
+      color: var(--muted);
+      text-align:center;
+      font-size:13px;
+    }
+    .toast{
+      position:fixed; right:18px; bottom:18px; z-index:99; min-width:260px;
+      padding:14px 16px; border-radius:16px; background:rgba(10,16,36,.95);
+      border:1px solid rgba(71,230,255,.22); box-shadow:var(--shadow); backdrop-filter:blur(14px);
+      transform:translateY(24px); opacity:0; pointer-events:none; transition:.35s ease;
+    }
+    .toast.show{transform:translateY(0); opacity:1}
+    .toast strong{display:block; margin-bottom:4px; color:#fff}
+    .toast span{color:var(--muted); font-size:13px}
+    .pill-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px}
+    .pill{
+      padding:9px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      color:#dce7ff;
+      font-size:12px;
+    }
+    .split{
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap:16px;
+      align-items:stretch;
+    }
+    .table-like{
+      display:grid;
+      gap:10px;
+      margin-top:14px;
+    }
+    .row{
+      display:grid;
+      grid-template-columns: 180px 1fr;
+      gap:10px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      border-radius:16px;
+      padding:12px 14px;
+    }
+    .row b{font-size:13px}
+    .row span{font-size:13px; color:var(--muted); line-height:1.65}
+    @media (max-width: 1100px){
+      .hero,.roadmap,.commands-grid,.grid,.downloads,.split{grid-template-columns:1fr}
+    }
+    @media (max-width: 980px){
+      header{position:static; flex-direction:column; align-items:flex-start}
+      .nav-pill{justify-content:flex-start}
+    }
+    @media (max-width: 560px){
+      .wrap{width:min(100% - 16px, 1220px)}
+      .hero-card,.side-card,.feature,.pdf-card,.road-card,.faq,.note,.preview{border-radius:20px}
+      .hero-card{padding:24px 18px}
+      .side-card{padding:18px}
+      .actions{gap:10px}
+      .btn{width:100%}
+      .row{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="scanlines"></div>
+  <div class="orb one"></div>
+  <div class="orb two"></div>
+  <div class="orb three"></div>
+
+  <div class="wrap">
+    <header>
+      <a class="brand" href="#top">
+        <div class="logo"></div>
+        <div>
+          <h1>Termux Learning Hub</h1>
+          <p>Animated learning website + PDFs</p>
+        </div>
+      </a>
+      <nav class="nav-pill">
+        <a href="#features">Features</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#downloads">Downloads</a>
+        <a href="#commands">Commands</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-card">
+          <span class="badge">Futuristic Learning Space</span>
+          <h2 class="glitch" data-text="TERMUX FIRST STEP">TERMUX FIRST STEP</h2>
+          <p>
+            Ye single-file website beginners ke liye banayi gayi hai. Isme strong visual design,
+            neon animations, learning roadmap, 100+ commands ka preview, aur 2 working PDF download
+            buttons hain. GitHub Pages par upload karne ke liye simple aur clean rahega.
+          </p>
+
+          <div class="stats">
+            <div class="stat">
+              <strong>100+</strong>
+              <span>basic commands in PDF</span>
+            </div>
+            <div class="stat">
+              <strong>2</strong>
+              <span>separate downloadable PDFs</span>
+            </div>
+            <div class="stat">
+              <strong>Live</strong>
+              <span>browser-generated download</span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn-primary" id="downloadBasics">Download Basics PDF</button>
+            <button class="btn btn-secondary" id="downloadExplained">Download Explained PDF</button>
+          </div>
+
+          <div class="pill-row">
+            <div class="pill">Dark cyber style</div>
+            <div class="pill">Smooth hover motion</div>
+            <div class="pill">Glitch headline</div>
+            <div class="pill">Clean learning layout</div>
+          </div>
+        </div>
+
+        <aside class="side-card">
+          <div class="terminal">
+            <div class="term-top">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <div class="term-line">
+              <div>$ pkg update && pkg upgrade</div>
+              <div>$ termux-setup-storage</div>
+              <div>$ pkg install python git nano</div>
+              <div>$ ls / $ cd / $ pwd</div>
+              <div>$ chmod +x script.sh</div>
+              <div>$ python script.py</div>
+              <div>$ git clone &lt;repo&gt;</div>
+              <div style="margin-top:8px;color:var(--cyan)">Learning mode active <span class="cursor"></span></div>
+            </div>
+          </div>
+          <div class="status"><i></i> Buttons se PDFs seedha download hongi</div>
+          <div class="preview">
+            <b>Quick Preview</b>
+            <div class="preview-grid">
+              <div class="note">
+                <h3>Basics PDF</h3>
+                <p>Command list, beginner setup, file handling, permissions, networking, Git, Python, and utility tools.</p>
+              </div>
+              <div class="note">
+                <h3>Explained PDF</h3>
+                <p>Har command ke saath simple meaning diya gaya hai taake tum samajh bhi sako.</p>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="section" id="features">
+        <h2>Why this version feels bigger</h2>
+        <p class="lead">Is page me sirf download buttons nahi hain. Poora structure learning-focused rakha gaya hai: roadmap, command explorer, categorized preview, FAQ, aur multiple animated UI blocks.</p>
+        <div class="grid">
+          <article class="feature">
+            <div class="icon">✦</div>
+            <h3>Glowing UI</h3>
+            <p>Dark futuristic palette with neon edges, floating orbs, grid background aur shiny cards.</p>
+          </article>
+          <article class="feature">
+            <div class="icon">↻</div>
+            <h3>Animated everywhere</h3>
+            <p>Title glitch, button shine, hover lifts, floating panels, smooth reveal effects.</p>
+          </article>
+          <article class="feature">
+            <div class="icon">⬇</div>
+            <h3>Working PDFs</h3>
+            <p>Browser ke andar hi PDFs generate hoti hain, is liye GitHub Pages par bhi kaam kar sakti hain.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="roadmap">
+        <h2>Learning roadmap</h2>
+        <p class="lead">Agar tum beginner ho to ye order follow karo. Ye roadmap page ko ek real learning website feel deta hai.</p>
+        <div class="roadmap">
+          <article class="road-card">
+            <div class="step">Step 1</div>
+            <h3>Setup Termux</h3>
+            <p>Update, upgrade, storage permission, basic packages install karo.</p>
+          </article>
+          <article class="road-card">
+            <div class="step">Step 2</div>
+            <h3>File navigation</h3>
+            <p>ls, cd, pwd, mkdir, touch, cp, mv, rm aur file reading commands samjho.</p>
+          </article>
+          <article class="road-card">
+            <div class="step">Step 3</div>
+            <h3>Tools and scripts</h3>
+            <p>Nano, Python, Git, chmod, bash scripts aur environment basics learn karo.</p>
+          </article>
+          <article class="road-card">
+            <div class="step">Step 4</div>
+            <h3>Practice daily</h3>
+            <p>Har din 5 commands yaad karo aur unko real files par use karo.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="downloads">
+        <h2>Downloads</h2>
+        <p class="lead">Ye dono files button click par generate hongi. Basics wali file 100+ commands ke saath hogi, aur explained wali file un commands ke meanings ke saath organized form me hogi.</p>
+        <div class="downloads">
+          <article class="pdf-card">
+            <h3>Termux First Step — Basics PDF</h3>
+            <p>Is PDF me 100+ beginner commands hain, jese package update, files, permissions, storage, Python, Git, networking basics aur common terminal utilities.</p>
+            <div class="mini-list">
+              <div>100+ commands included</div>
+              <div>Clean PDF formatting</div>
+              <div>Perfect for first learning step</div>
+            </div>
+            <button class="btn btn-primary" id="downloadBasics2">Download PDF</button>
+          </article>
+
+          <article class="pdf-card">
+            <h3>Commands Meaning PDF</h3>
+            <p>Dusri PDF me har command ke saamne simple explanation di gayi hai, taake tum sirf command yaad na karo balki samajh bhi sako.</p>
+            <div class="mini-list">
+              <div>Simple meanings</div>
+              <div>Easy-to-read table</div>
+              <div>Beginners ke liye best</div>
+            </div>
+            <button class="btn btn-secondary" id="downloadExplained2">Download PDF</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="commands">
+        <h2>Command explorer</h2>
+        <p class="lead">Neeche commands ka live preview diya gaya hai. Search aur category chips se simple filtering bhi hai, taake page zyada interactive lage.</p>
+
+        <div class="toolbar">
+          <input class="input" id="search" placeholder="Search command or meaning..." />
+          <div class="chips" id="chips">
+            <div class="chip active" data-filter="all">All</div>
+            <div class="chip" data-filter="setup">Setup</div>
+            <div class="chip" data-filter="files">Files</div>
+            <div class="chip" data-filter="tools">Tools</div>
+            <div class="chip" data-filter="git">Git</div>
+            <div class="chip" data-filter="net">Network</div>
+          </div>
+        </div>
+
+        <div class="commands-grid" id="commandsGrid"></div>
+      </section>
+
+      <section class="section">
+        <div class="split">
+          <div class="preview">
+            <h2 style="margin:0 0 6px;">Inside the PDFs</h2>
+            <p class="lead" style="margin-bottom:0;">Bas preview ke liye kuch categories yahan dikh rahi hain. Real downloadable PDF me full list hogi.</p>
+            <div class="table-like">
+              <div class="row"><b>Setup</b><span>pkg update, pkg upgrade, termux-setup-storage, install nano/git/python</span></div>
+              <div class="row"><b>File tools</b><span>ls, cd, pwd, mkdir, touch, cp, mv, rm, cat, grep, find, chmod</span></div>
+              <div class="row"><b>Dev tools</b><span>Python, Git, Bash scripts, piping, text processing, archives</span></div>
+              <div class="row"><b>Network basics</b><span>ping, curl, wget, ip, ifconfig, netstat, ssh basics</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="note" style="margin-bottom:12px;">
+              <h3>Use this on GitHub Pages</h3>
+              <p>Is file ko `index.html` naam se upload karo. Download buttons aur animations browser me direct work karenge.</p>
+            </div>
+            <div class="note">
+              <h3>Simple upload flow</h3>
+              <p>Repo banao → `index.html` add karo → GitHub Pages enable karo → live website open karo.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="faq">
+        <h2>FAQ</h2>
+        <details class="faq">
+          <summary>PDF download kaise kaam karega?</summary>
+          <p>Buttons click hone par browser JavaScript se PDF generate karega. Is liye alag file pehle se host karne ki zarurat nahi.</p>
+        </details>
+        <details class="faq">
+          <summary>Kya ye single file website hai?</summary>
+          <p>Haan, poora design, animations, search, aur PDF generation ek hi `index.html` me diya gaya hai.</p>
+        </details>
+        <details class="faq">
+          <summary>Kya isme aur commands add ho sakti hain?</summary>
+          <p>Haan, commands array ko aur bada karke 150+ bhi kiya ja sakta hai. Abhi bhi isme kaafi extensive list hai.</p>
+        </details>
+      </section>
+    </main>
+
+    <footer class="footer">
+      Built for learning • Single-file HTML • Animated UI • PDF generator included
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"><strong>Preparing PDF</strong><span>Your file is being generated...</span></div>
+
+  <script>
+    const { jsPDF } = window.jspdf;
+
+    const commands = [
+      { cmd: "pkg update", use: "Package lists refresh karta hai", cat: "setup" },
+      { cmd: "pkg upgrade", use: "Installed packages ko update karta hai", cat: "setup" },
+      { cmd: "pkg install <name>", use: "Naya package install karta hai", cat: "setup" },
+      { cmd: "pkg uninstall <name>", use: "Package remove karta hai", cat: "setup" },
+      { cmd: "pkg search <name>", use: "Package dhoondta hai", cat: "setup" },
+      { cmd: "pkg list-installed", use: "Installed packages ki list", cat: "setup" },
+      { cmd: "termux-setup-storage", use: "Storage permission set karta hai", cat: "setup" },
+      { cmd: "cd", use: "Directory change karta hai", cat: "files" },
+      { cmd: "pwd", use: "Current path batata hai", cat: "files" },
+      { cmd: "ls", use: "Files aur folders show karta hai", cat: "files" },
+      { cmd: "ls -la", use: "Hidden files ke sath list", cat: "files" },
+      { cmd: "mkdir <folder>", use: "Naya folder banata hai", cat: "files" },
+      { cmd: "mkdir -p a/b/c", use: "Nested folders banata hai", cat: "files" },
+      { cmd: "touch <file>", use: "Nayi file banata hai", cat: "files" },
+      { cmd: "cp file1 file2", use: "File copy karta hai", cat: "files" },
+      { cmd: "mv old new", use: "File move/rename karta hai", cat: "files" },
+      { cmd: "rm <file>", use: "File delete karta hai", cat: "files" },
+      { cmd: "rm -r <folder>", use: "Folder delete karta hai", cat: "files" },
+      { cmd: "cat <file>", use: "File content show karta hai", cat: "files" },
+      { cmd: "nano <file>", use: "Editor me file kholta hai", cat: "tools" },
+      { cmd: "vim <file>", use: "Vim editor kholta hai", cat: "tools" },
+      { cmd: "grep 'text' file", use: "Text search karta hai", cat: "tools" },
+      { cmd: "find . -name file", use: "File search karta hai", cat: "tools" },
+      { cmd: "chmod +x file.sh", use: "Script ko executable banata hai", cat: "tools" },
+      { cmd: "clear", use: "Screen clean karta hai", cat: "tools" },
+      { cmd: "history", use: "Command history show karta hai", cat: "tools" },
+      { cmd: "echo 'hello'", use: "Text print karta hai", cat: "tools" },
+      { cmd: "whoami", use: "Current user batata hai", cat: "tools" },
+      { cmd: "uname -a", use: "System info show karta hai", cat: "tools" },
+      { cmd: "python --version", use: "Python version check", cat: "tools" },
+      { cmd: "python file.py", use: "Python script run karta hai", cat: "tools" },
+      { cmd: "pip install <pkg>", use: "Python package install karta hai", cat: "tools" },
+      { cmd: "git init", use: "New git repo banata hai", cat: "git" },
+      { cmd: "git clone <url>", use: "Repo copy karta hai", cat: "git" },
+      { cmd: "git status", use: "Changes check karta hai", cat: "git" },
+      { cmd: "git add .", use: "Files stage karta hai", cat: "git" },
+      { cmd: "git commit -m 'msg'", use: "Commit save karta hai", cat: "git" },
+      { cmd: "git push", use: "Changes upload karta hai", cat: "git" },
+      { cmd: "git pull", use: "Remote se changes laata hai", cat: "git" },
+      { cmd: "wget <url>", use: "File download karta hai", cat: "net" },
+      { cmd: "curl <url>", use: "URL request karta hai", cat: "net" },
+      { cmd: "ping google.com", use: "Network test karta hai", cat: "net" },
+      { cmd: "ifconfig", use: "Network interfaces", cat: "net" },
+      { cmd: "ip addr", use: "IP details dikhata hai", cat: "net" },
+      { cmd: "netstat -tulpn", use: "Open ports show karta hai", cat: "net" },
+      { cmd: "proot-distro list", use: "Distros list show karta hai", cat: "setup" },
+      { cmd: "proot-distro install ubuntu", use: "Ubuntu install karta hai", cat: "setup" },
+      { cmd: "proot-distro login ubuntu", use: "Ubuntu shell open karta hai", cat: "setup" },
+      { cmd: "apt update", use: "APT update command", cat: "setup" },
+      { cmd: "apt install <pkg>", use: "APT package install", cat: "setup" },
+      { cmd: "bash script.sh", use: "Bash script run karta hai", cat: "tools" },
+      { cmd: "./script.sh", use: "Executable script run", cat: "tools" },
+      { cmd: "termux-open <file>", use: "File app se open karta hai", cat: "tools" },
+      { cmd: "termux-share <file>", use: "File share karta hai", cat: "tools" },
+      { cmd: "termux-wake-lock", use: "Device sleep prevent karta hai", cat: "tools" },
+      { cmd: "termux-wake-unlock", use: "Wake lock remove karta hai", cat: "tools" },
+      { cmd: "rm -rf <folder>", use: "Dangerous folder delete command", cat: "files" }
+    ];
+
+    const extraCommands = [
+      ["pwdx <pid>", "Process ka path batata hai"],
+      ["sleep 5", "5 seconds wait"],
+      ["less <file>", "File page-by-page open karta hai"],
+      ["head <file>", "Starting lines show karta hai"],
+      ["tail <file>", "Last lines show karta hai"],
+      ["sort", "Sort karta hai"],
+      ["uniq", "Duplicates hataata hai"],
+      ["wc -l file", "Lines count karta hai"],
+      ["basename path", "File name nikalta hai"],
+      ["dirname path", "Folder path nikalta hai"],
+      ["readlink -f path", "Absolute path deta hai"],
+      ["which cmd", "Command location batata hai"],
+      ["command -v cmd", "Command availability check"],
+      ["alias ll='ls -la'", "Shortcut command banata hai"],
+      ["export PATH=...", "Environment variable set"],
+      ["env", "Environment variables show"],
+      ["stty size", "Terminal size batata hai"],
+      ["help", "Built-in help deta hai"],
+      ["exit", "Terminal band karta hai"],
+      ["reset", "Terminal reset karta hai"]
+    ];
+
+    const allForPdf = commands.map((c, i) => [String(i + 1), c.cmd, c.use]).concat(
+      extraCommands.map((c, i) => [String(commands.length + i + 1), c[0], c[1]])
+    );
+
+    function showToast(title, text){
+      const toast = document.getElementById('toast');
+      toast.querySelector('strong').textContent = title;
+      toast.querySelector('span').textContent = text;
+      toast.classList.add('show');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    function makePDF(title, accent, filename, columnTitle){
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 40;
+
+      doc.setFillColor(5, 8, 22);
+      doc.rect(0, 0, pageWidth, pageHeight, 'F');
+      doc.setTextColor(accent[0], accent[1], accent[2]);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(22);
+      doc.text(title, margin, 54);
+      doc.setTextColor(230, 240, 255);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(11);
+      doc.text('Beginner-friendly command guide for Termux learning.', margin, 74);
+      doc.setDrawColor(accent[0], accent[1], accent[2]);
+      doc.line(margin, 86, pageWidth - margin, 86);
+
+      doc.autoTable({
+        startY: 102,
+        head: [['#', 'Command', columnTitle]],
+        body: allForPdf,
+        theme: 'grid',
+        margin: { left: margin, right: margin },
+        styles: {
+          font: 'helvetica',
+          fontSize: 8.25,
+          cellPadding: 4,
+          textColor: [230,240,255],
+          fillColor: [10,16,36],
+          lineColor: [65,100,150],
+          lineWidth: 0.3
+        },
+        headStyles: {
+          fillColor: accent,
+          textColor: accent[0] < 100 ? [255,255,255] : [5,8,22],
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: { fillColor: [14,22,46] },
+        columnStyles: { 0: { cellWidth: 34 }, 1: { cellWidth: 190 }, 2: { cellWidth: 'auto' } }
+      });
+
+      doc.save(filename);
+    }
+
+    function triggerPdf(type){
+      showToast('Preparing PDF', 'Your file is being generated...');
+      setTimeout(() => {
+        try{
+          if(type === 'basics') makePDF('TERMUX FIRST STEP — BASIC COMMANDS', [71,230,255], 'Termux_First_Step_Basics.pdf', 'Use');
+          else makePDF('TERMUX COMMANDS — MEANINGS', [139,92,246], 'Termux_Commands_Explained.pdf', 'Meaning');
+          showToast('Download started', 'PDF file is now downloading.');
+        }catch(err){
+          console.error(err);
+          showToast('Error', 'PDF generate nahi hui. CDN ya internet check karo.');
+        }
+      }, 250);
+    }
+
+    document.getElementById('downloadBasics').addEventListener('click', () => triggerPdf('basics'));
+    document.getElementById('downloadExplained').addEventListener('click', () => triggerPdf('explained'));
+    document.getElementById('downloadBasics2').addEventListener('click', () => triggerPdf('basics'));
+    document.getElementById('downloadExplained2').addEventListener('click', () => triggerPdf('explained'));
+
+    function renderCommands(filter='all', search=''){
+      const grid = document.getElementById('commandsGrid');
+      const q = search.trim().toLowerCase();
+      const items = commands.filter(item => {
+        const catOk = filter === 'all' || item.cat === filter;
+        const text = (item.cmd + ' ' + item.use).toLowerCase();
+        const searchOk = !q || text.includes(q);
+        return catOk && searchOk;
+      });
+      grid.innerHTML = items.map(item => `
+        <article class="cmd">
+          <code>${item.cmd}</code>
+          <strong>${item.cat.toUpperCase()}</strong>
+          <span>${item.use}</span>
+        </article>
+      `).join('') || `<div class="note" style="grid-column:1/-1;"><h3>No result found</h3><p>Search ko change karo ya All filter choose karo.</p></div>`;
+    }
+
+    let activeFilter = 'all';
+    renderCommands();
+
+    document.getElementById('search').addEventListener('input', (e) => renderCommands(activeFilter, e.target.value));
+
+    document.getElementById('chips').addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip');
+      if(!chip) return;
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderCommands(activeFilter, document.getElementById('search').value);
+    });
+  </script>
+</body>
+</html>
