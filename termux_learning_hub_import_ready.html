@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Termux Learning Hub</title>
+  <meta name="description" content="Futuristic Termux Learning Hub with animated cyberpunk UI, downloadable command packs, and import-ready file handling." />
+  <style>
+    :root{
+      --bg:#04060b;
+      --bg2:#07111a;
+      --panel:rgba(10,16,24,.72);
+      --panel2:rgba(8,12,18,.92);
+      --line:rgba(114,255,216,.14);
+      --text:#d8fff4;
+      --muted:#8ab5a8;
+      --green:#66ffb0;
+      --cyan:#59e7ff;
+      --lime:#9bff57;
+      --pink:#ff4fd8;
+      --shadow:0 0 24px rgba(102,255,176,.14), 0 0 48px rgba(89,231,255,.08);
+      --radius:22px;
+      --radius2:28px;
+      --max:1200px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(89,231,255,.12), transparent 30%),
+        radial-gradient(circle at 80% 10%, rgba(102,255,176,.10), transparent 26%),
+        radial-gradient(circle at 50% 80%, rgba(255,79,216,.08), transparent 30%),
+        linear-gradient(180deg, #020409 0%, #05080d 40%, #020409 100%);
+      color:var(--text);
+      overflow-x:hidden;
+    }
+
+    canvas.fx{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .grid-overlay{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:1;
+      background-image:
+        linear-gradient(rgba(102,255,176,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(89,231,255,.04) 1px, transparent 1px);
+      background-size:44px 44px;
+      mask-image: radial-gradient(circle at center, black 15%, transparent 82%);
+      opacity:.42;
+      animation:gridDrift 18s linear infinite;
+    }
+
+    .scanlines{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:2;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,.02) 0px,
+        rgba(255,255,255,.01) 1px,
+        transparent 2px,
+        transparent 5px
+      );
+      opacity:.22;
+      mix-blend-mode:screen;
+      animation:scanPulse 9s ease-in-out infinite;
+    }
+
+    .noise{
+      position:fixed;
+      inset:-50%;
+      pointer-events:none;
+      z-index:3;
+      opacity:.08;
+      background-image:
+        radial-gradient(circle at 25% 25%, rgba(255,255,255,.24) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 75% 75%, rgba(255,255,255,.12) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 55% 15%, rgba(255,255,255,.10) 0 1px, transparent 1.5px);
+      background-size: 3px 3px;
+      animation:noiseMove 1.2s steps(2) infinite;
+      transform:translate3d(0,0,0);
+    }
+
+    @keyframes gridDrift{from{transform:translateY(0)}to{transform:translateY(44px)}}
+    @keyframes scanPulse{0%,100%{opacity:.16}50%{opacity:.27}}
+    @keyframes noiseMove{
+      0%{transform:translate(-1%, -1%)}
+      25%{transform:translate(1%, -2%)}
+      50%{transform:translate(2%, 1%)}
+      75%{transform:translate(-2%, 2%)}
+      100%{transform:translate(-1%, -1%)}
+    }
+
+    .wrap{
+      position:relative;
+      z-index:4;
+      width:min(var(--max), calc(100% - 32px));
+      margin:0 auto;
+      padding:28px 0 56px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      padding:14px 18px;
+      border:1px solid rgba(114,255,216,.14);
+      border-radius:999px;
+      background:linear-gradient(180deg, rgba(8,12,18,.62), rgba(6,10,16,.34));
+      backdrop-filter: blur(18px);
+      box-shadow:var(--shadow);
+      position:sticky;
+      top:12px;
+      z-index:20;
+      overflow:hidden;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
+
+    .orb{
+      width:14px;height:14px;border-radius:50%;
+      background:radial-gradient(circle, #ffffff 0%, var(--green) 28%, rgba(102,255,176,.2) 68%, transparent 72%);
+      box-shadow:0 0 12px rgba(102,255,176,.85), 0 0 26px rgba(89,231,255,.35);
+      animation:orbPulse 2.2s ease-in-out infinite;
+      flex:0 0 auto;
+    }
+    @keyframes orbPulse{
+      0%,100%{transform:scale(.9);filter:brightness(1)}
+      50%{transform:scale(1.15);filter:brightness(1.4)}
+    }
+
+    .brand h1{
+      margin:0;
+      font-size:.92rem;
+      font-weight:800;
+      letter-spacing:.24em;
+      text-transform:uppercase;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .brand span{
+      color:var(--muted);
+      font-size:.78rem;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+
+    .status{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:.78rem;
+      color:#9feedd;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+
+    .status i{
+      width:8px;height:8px;border-radius:50%;
+      background:var(--lime);
+      box-shadow:0 0 14px rgba(155,255,87,.9);
+      display:inline-block;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns: 1.2fr .9fr;
+      gap:24px;
+      align-items:stretch;
+      padding:24px 0 18px;
+      margin-top:8px;
+    }
+
+    .hero-card,
+    .glass{
+      position:relative;
+      background:linear-gradient(180deg, rgba(15,24,35,.82), rgba(6,10,16,.82));
+      border:1px solid rgba(102,255,176,.14);
+      border-radius:var(--radius2);
+      backdrop-filter: blur(22px);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .hero-card{
+      padding:34px;
+      min-height:520px;
+      isolation:isolate;
+    }
+
+    .hero-card::before,
+    .glass::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      border-radius:inherit;
+      background:linear-gradient(120deg, rgba(102,255,176,.18), rgba(89,231,255,.12), rgba(255,79,216,.10), rgba(102,255,176,.18));
+      filter:blur(20px);
+      opacity:.32;
+      z-index:-1;
+      animation:borderGlow 8s linear infinite;
+    }
+    @keyframes borderGlow{
+      0%,100%{transform:translateX(-1%) translateY(0) scale(1)}
+      50%{transform:translateX(1%) translateY(-1%) scale(1.01)}
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 12px;
+      border:1px solid rgba(102,255,176,.18);
+      border-radius:999px;
+      background:rgba(8,14,20,.66);
+      color:#bdfdeb;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      font-size:.72rem;
+      box-shadow:0 0 0 1px rgba(89,231,255,.03) inset;
+      animation:floatY 6s ease-in-out infinite;
+    }
+    @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+
+    .glitch{
+      position:relative;
+      margin:18px 0 14px;
+      font-size:clamp(2.7rem, 6vw, 5.5rem);
+      line-height:.95;
+      letter-spacing:-.05em;
+      font-weight:900;
+      text-transform:uppercase;
+      text-wrap:balance;
+      filter:drop-shadow(0 0 18px rgba(102,255,176,.12));
+    }
+
+    .glitch::before,
+    .glitch::after{
+      content:attr(data-text);
+      position:absolute;
+      inset:0;
+      opacity:.9;
+      pointer-events:none;
+    }
+
+    .glitch::before{
+      transform:translate(2px,0);
+      color:var(--cyan);
+      clip-path: inset(0 0 62% 0);
+      animation:glitchTop 3.2s infinite linear alternate-reverse;
+    }
+
+    .glitch::after{
+      transform:translate(-2px,0);
+      color:var(--pink);
+      clip-path: inset(55% 0 0 0);
+      animation:glitchBottom 2.8s infinite linear alternate-reverse;
+    }
+
+    @keyframes glitchTop{
+      0%{clip-path: inset(0 0 72% 0); transform:translate(2px,-1px)}
+      15%{clip-path: inset(10% 0 60% 0); transform:translate(-1px,0)}
+      30%{clip-path: inset(4% 0 78% 0); transform:translate(3px,-1px)}
+      45%{clip-path: inset(18% 0 54% 0); transform:translate(-2px,1px)}
+      60%{clip-path: inset(0 0 68% 0); transform:translate(1px,0)}
+      75%{clip-path: inset(8% 0 70% 0); transform:translate(4px,0)}
+      100%{clip-path: inset(2% 0 60% 0); transform:translate(0,0)}
+    }
+
+    @keyframes glitchBottom{
+      0%{clip-path: inset(58% 0 0 0); transform:translate(-2px,1px)}
+      20%{clip-path: inset(72% 0 0 0); transform:translate(2px,0)}
+      40%{clip-path: inset(50% 0 0 0); transform:translate(-3px,-1px)}
+      60%{clip-path: inset(64% 0 0 0); transform:translate(2px,1px)}
+      80%{clip-path: inset(56% 0 0 0); transform:translate(-1px,0)}
+      100%{clip-path: inset(68% 0 0 0); transform:translate(0,0)}
+    }
+
+    .hero p{
+      margin:0;
+      max-width:62ch;
+      color:var(--muted);
+      font-size:1.02rem;
+      line-height:1.75;
+    }
+
+    .hero-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+      margin:26px 0 0;
+    }
+
+    .btn{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:15px 18px;
+      min-height:52px;
+      border:none;
+      border-radius:16px;
+      cursor:pointer;
+      text-decoration:none;
+      color:#061018;
+      font-weight:800;
+      letter-spacing:.04em;
+      background:linear-gradient(135deg, var(--green), #d6ffb0);
+      box-shadow:0 10px 30px rgba(102,255,176,.14), 0 0 0 1px rgba(255,255,255,.05) inset;
+      transform:translateZ(0);
+      overflow:hidden;
+      transition:transform .22s ease, box-shadow .22s ease, filter .22s ease;
+    }
+    .btn.secondary{
+      color:var(--text);
+      background:linear-gradient(135deg, rgba(17,29,41,.96), rgba(8,13,20,.92));
+      border:1px solid rgba(89,231,255,.18);
+      box-shadow:0 10px 30px rgba(0,0,0,.2), 0 0 0 1px rgba(89,231,255,.04) inset;
+    }
+
+    .btn::before{
+      content:"";
+      position:absolute;
+      inset:auto auto 0 0;
+      width:120%;
+      height:160%;
+      background:linear-gradient(110deg, transparent 20%, rgba(255,255,255,.42) 45%, transparent 65%);
+      transform:translateX(-120%) skewX(-18deg);
+      transition:transform .6s ease;
+    }
+
+    .btn:hover{
+      transform:translateY(-2px) scale(1.01);
+      box-shadow:0 16px 36px rgba(102,255,176,.16), 0 0 30px rgba(89,231,255,.12);
+      filter:saturate(1.15);
+    }
+
+    .btn:hover::before{transform:translateX(20%) skewX(-18deg)}
+    .btn:active{transform:translateY(1px) scale(.99)}
+
+    .btn .icon{
+      display:inline-grid;
+      place-items:center;
+      width:22px;height:22px;
+      border-radius:8px;
+      background:rgba(0,0,0,.14);
+    }
+
+    .hero-metrics{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:14px;
+      margin-top:28px;
+    }
+
+    .metric{
+      padding:16px;
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(10,18,28,.72), rgba(8,12,18,.92));
+      border:1px solid rgba(114,255,216,.12);
+      min-height:98px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .metric::after{
+      content:"";
+      position:absolute;
+      inset:auto -10% -40% auto;
+      width:120px;height:120px;
+      background:radial-gradient(circle, rgba(102,255,176,.16), transparent 68%);
+      filter:blur(6px);
+      animation:metricGlow 5s ease-in-out infinite;
+    }
+    @keyframes metricGlow{
+      0%,100%{transform:translate(0,0) scale(1)}
+      50%{transform:translate(-8px,-10px) scale(1.1)}
+    }
+
+    .metric .num{
+      display:block;
+      font-size:1.55rem;
+      font-weight:900;
+      color:#effff9;
+      letter-spacing:-.03em;
+    }
+
+    .metric .label{
+      display:block;
+      margin-top:6px;
+      color:var(--muted);
+      font-size:.78rem;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+
+    .hero-side{display:grid;gap:18px;align-content:stretch}
+
+    .terminal{
+      padding:22px;
+      min-height:520px;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .terminal-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .dots{display:flex;gap:8px}
+    .dots span{
+      width:11px;height:11px;border-radius:50%;
+      background:rgba(255,255,255,.12);
+      box-shadow:0 0 8px rgba(255,255,255,.08);
+    }
+    .dots span:nth-child(1){background:#ff5f57;box-shadow:0 0 12px rgba(255,95,87,.4)}
+    .dots span:nth-child(2){background:#febc2e;box-shadow:0 0 12px rgba(254,188,46,.38)}
+    .dots span:nth-child(3){background:#28c840;box-shadow:0 0 12px rgba(40,200,64,.34)}
+
+    .terminal-title{
+      font-size:.78rem;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color:#a8d7cb;
+    }
+
+    .terminal-body{
+      flex:1;
+      border-radius:20px;
+      padding:18px;
+      background:
+        linear-gradient(180deg, rgba(3,7,12,.82), rgba(4,7,12,.96)),
+        radial-gradient(circle at top left, rgba(102,255,176,.1), transparent 20%);
+      border:1px solid rgba(102,255,176,.12);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size:.86rem;
+      line-height:1.7;
+      color:#bfeede;
+      overflow:auto;
+      position:relative;
+    }
+
+    .terminal-body::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(180deg, transparent, rgba(255,255,255,.03), transparent);
+      animation:terminalSweep 4.8s linear infinite;
+      pointer-events:none;
+    }
+
+    @keyframes terminalSweep{from{transform:translateY(-100%)}to{transform:translateY(100%)}}
+
+    .line{display:flex;gap:10px;margin:0 0 8px;opacity:.96}
+    .prompt{color:var(--green)}
+    .path{color:var(--cyan)}
+    .cmd{color:#f4fff9}
+    .out{color:#9cc9bc}
+
+    .cursor{
+      display:inline-block;
+      width:8px;
+      height:1.15em;
+      background:var(--green);
+      margin-left:4px;
+      animation:blink .9s steps(1) infinite;
+      vertical-align:middle;
+    }
+    @keyframes blink{50%{opacity:0}}
+
+    .chip-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:2px}
+    .chip{
+      padding:9px 12px;
+      border-radius:999px;
+      border:1px solid rgba(89,231,255,.16);
+      background:rgba(8,14,20,.65);
+      color:#bfeee3;
+      font-size:.75rem;
+      letter-spacing:.1em;
+      text-transform:uppercase;
+      box-shadow:0 0 0 1px rgba(255,255,255,.02) inset;
+      transition:transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+    }
+    .chip:hover{
+      transform:translateY(-2px);
+      border-color:rgba(102,255,176,.32);
+      box-shadow:0 0 0 1px rgba(102,255,176,.05) inset, 0 0 18px rgba(102,255,176,.12);
+    }
+
+    .section{margin-top:24px;display:grid;gap:18px}
+    .section-head{
+      display:flex;
+      align-items:end;
+      justify-content:space-between;
+      gap:16px;
+      padding:0 2px;
+    }
+    .section-head h2{
+      margin:0;
+      font-size:1.3rem;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+    .section-head p{
+      margin:0;
+      color:var(--muted);
+      font-size:.9rem;
+      max-width:54ch;
+    }
+
+    .vault{padding:24px}
+    .vault-grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:18px;
+      align-items:stretch;
+    }
+
+    .download-panel{
+      padding:22px;
+      border-radius:22px;
+      background:linear-gradient(180deg, rgba(8,14,20,.95), rgba(6,10,16,.94));
+      border:1px solid rgba(102,255,176,.16);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .download-panel::before{
+      content:"";
+      position:absolute;
+      inset:-30%;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(102,255,176,.14), transparent 25%),
+        radial-gradient(circle at 80% 10%, rgba(89,231,255,.12), transparent 22%),
+        radial-gradient(circle at 60% 80%, rgba(255,79,216,.08), transparent 24%);
+      animation:panelDrift 10s linear infinite;
+      filter:blur(16px);
+      opacity:.8;
+    }
+    @keyframes panelDrift{from{transform:translate3d(0,0,0) rotate(0deg)}to{transform:translate3d(5%, -2%, 0) rotate(360deg)}}
+    .download-panel > *{position:relative; z-index:1}
+
+    .download-title{
+      margin:0 0 8px;
+      font-size:1.1rem;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .download-copy{
+      margin:0 0 18px;
+      color:var(--muted);
+      line-height:1.7;
+      font-size:.95rem;
+    }
+    .download-actions{display:grid;gap:14px}
+
+    .download-btn{
+      width:100%;
+      justify-content:space-between;
+      border-radius:18px;
+      padding:16px 18px;
+      font-weight:800;
+      text-align:left;
+      box-shadow:0 10px 30px rgba(0,0,0,.18);
+    }
+
+    .download-btn .meta{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      align-items:flex-start;
+    }
+
+    .download-btn small{
+      color:rgba(6,16,24,.72);
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    .download-btn.secondary small{color:#91b3aa}
+    .download-btn .arrow{font-size:1.2rem;transition:transform .22s ease}
+    .download-btn:hover .arrow{transform:translateX(3px)}
+
+    .list-panel{
+      padding:22px;
+      display:grid;
+      gap:14px;
+      align-content:start;
+    }
+    .list-panel .row{
+      display:flex;
+      align-items:flex-start;
+      gap:14px;
+      padding:14px;
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(9,14,21,.75), rgba(6,9,15,.92));
+      border:1px solid rgba(114,255,216,.12);
+      transition:transform .22s ease, border-color .22s ease;
+    }
+    .list-panel .row:hover{
+      transform:translateY(-2px);
+      border-color:rgba(102,255,176,.28);
+    }
+
+    .bullet{
+      width:12px;height:12px;border-radius:50%;
+      margin-top:4px;
+      background:linear-gradient(135deg, var(--green), var(--cyan));
+      box-shadow:0 0 14px rgba(102,255,176,.8);
+      flex:0 0 auto;
+    }
+    .row strong{display:block;margin-bottom:6px;font-size:.95rem}
+    .row span{color:var(--muted);font-size:.88rem;line-height:1.6}
+
+    .database{
+      grid-template-columns: repeat(3, 1fr);
+      gap:16px;
+    }
+    .card{
+      padding:20px;
+      border-radius:22px;
+      background:linear-gradient(180deg, rgba(12,18,28,.82), rgba(7,10,15,.94));
+      border:1px solid rgba(114,255,216,.12);
+      box-shadow:0 12px 30px rgba(0,0,0,.16);
+      transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+      position:relative;
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:auto -30% -40% auto;
+      width:180px;height:180px;
+      background:radial-gradient(circle, rgba(89,231,255,.14), transparent 65%);
+      transform:scale(.9);
+      pointer-events:none;
+      transition:transform .25s ease, opacity .25s ease;
+      opacity:.8;
+    }
+    .card:hover{
+      transform:translateY(-4px);
+      border-color:rgba(89,231,255,.26);
+      box-shadow:0 16px 40px rgba(0,0,0,.24), 0 0 24px rgba(89,231,255,.08);
+    }
+    .card:hover::before{transform:scale(1.1); opacity:1}
+    .card .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:7px 10px;
+      border-radius:999px;
+      background:rgba(8,14,20,.72);
+      border:1px solid rgba(102,255,176,.14);
+      color:#bdfdeb;
+      font-size:.72rem;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+    .card h3{
+      margin:14px 0 8px;
+      font-size:1.05rem;
+      letter-spacing:.04em;
+    }
+    .card p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.7;
+      font-size:.93rem;
+    }
+    .card .count{
+      margin-top:16px;
+      font-size:1.75rem;
+      font-weight:900;
+      letter-spacing:-.05em;
+      color:#effff9;
+    }
+
+    .import-panel{
+      margin-top:18px;
+      padding:22px;
+      border-radius:22px;
+      border:1px solid rgba(89,231,255,.16);
+      background:linear-gradient(180deg, rgba(8,14,20,.92), rgba(6,10,16,.94));
+      display:grid;
+      gap:14px;
+    }
+    .import-panel h3{
+      margin:0;
+      font-size:1.05rem;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .import-panel p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.7;
+      font-size:.95rem;
+    }
+    .file-input{
+      width:100%;
+      padding:15px;
+      border-radius:16px;
+      border:1px dashed rgba(102,255,176,.24);
+      background:rgba(10,16,24,.6);
+      color:var(--text);
+    }
+    .preview{
+      min-height:120px;
+      padding:16px;
+      border-radius:16px;
+      background:rgba(2,6,10,.85);
+      border:1px solid rgba(114,255,216,.1);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space:pre-wrap;
+      color:#bfeede;
+      line-height:1.65;
+      overflow:auto;
+      max-height:220px;
+    }
+
+    .footer{
+      margin-top:24px;
+      padding:20px 4px 6px;
+      color:var(--muted);
+      display:flex;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+      font-size:.88rem;
+      border-top:1px solid rgba(114,255,216,.1);
+    }
+    .footer strong{color:var(--text);font-weight:800}
+
+    .reveal{
+      opacity:0;
+      transform:translateY(16px);
+      transition:opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1);
+    }
+    .reveal.in{
+      opacity:1;
+      transform:translateY(0);
+    }
+
+    .ripple{
+      position:absolute;
+      border-radius:50%;
+      transform:scale(0);
+      animation:ripple .72s ease-out;
+      background:rgba(255,255,255,.45);
+      pointer-events:none;
+      mix-blend-mode:soft-light;
+    }
+    @keyframes ripple{to{transform:scale(9); opacity:0}}
+
+    @media (max-width: 1024px){
+      .hero,.vault-grid,.database{grid-template-columns:1fr}
+      .hero-card,.terminal{min-height:auto}
+      .hero-metrics{grid-template-columns:1fr}
+    }
+
+    @media (max-width: 720px){
+      .wrap{width:min(calc(100% - 20px), var(--max)); padding-top:16px}
+      .topbar{
+        border-radius:24px;
+        padding:14px;
+        align-items:flex-start;
+        flex-direction:column;
+      }
+      .status{white-space:normal}
+      .hero-card{padding:22px}
+      .glitch{font-size:clamp(2.2rem, 12vw, 4rem)}
+      .section-head{flex-direction:column; align-items:flex-start}
+      .download-btn{padding:15px 16px}
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      *, *::before, *::after{
+        animation:none !important;
+        transition:none !important;
+        scroll-behavior:auto !important;
+      }
+      canvas.fx, .grid-overlay, .scanlines, .noise{display:none}
+    }
+  </style>
+</head>
+<body>
+  <canvas class="fx" id="matrix"></canvas>
+  <canvas class="fx" id="particles"></canvas>
+  <div class="grid-overlay"></div>
+  <div class="scanlines"></div>
+  <div class="noise"></div>
+
+  <main class="wrap">
+    <header class="topbar reveal">
+      <div class="brand">
+        <div class="orb"></div>
+        <div>
+          <h1>Termux Learning Hub</h1>
+          <span>Cyberpunk command vault</span>
+        </div>
+      </div>
+      <div class="status"><i></i> live learning database • offline-ready downloads</div>
+    </header>
+
+    <section class="hero">
+      <article class="hero-card reveal">
+        <div class="eyebrow">Secure Terminal Learning Stack</div>
+        <h2 class="glitch" data-text="Termux Learning Hub">Termux Learning Hub</h2>
+        <p>
+          A futuristic command database for Termux beginners and power users.
+          Built for fast reference, clean learning, and instant downloads.
+        </p>
+
+        <div class="hero-actions">
+          <a class="btn" href="#downloads"><span class="icon">↓</span><span>Open Download Vault</span></a>
+          <a class="btn secondary" href="#database"><span class="icon">⌁</span><span>Explore Command Nodes</span></a>
+        </div>
+
+        <div class="hero-metrics">
+          <div class="metric"><span class="num" data-count="120">0</span><span class="label">basic commands</span></div>
+          <div class="metric"><span class="num" data-count="24">0</span><span class="label">learning modules</span></div>
+          <div class="metric"><span class="num" data-count="2">0</span><span class="label">download packs</span></div>
+        </div>
+      </article>
+
+      <aside class="terminal glass reveal">
+        <div class="terminal-head">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <div class="terminal-title">system console</div>
+        </div>
+        <div class="terminal-body" aria-label="animated terminal preview">
+          <div class="line"><span class="prompt">user@android</span><span class="path">~/termux</span><span class="cmd">$ pkg update</span></div>
+          <div class="line"><span class="out">:: refresh package index completed</span></div>
+          <div class="line"><span class="prompt">user@android</span><span class="path">~/termux</span><span class="cmd">$ pkg install python</span></div>
+          <div class="line"><span class="out">:: python runtime ready for scripting</span></div>
+          <div class="line"><span class="prompt">user@android</span><span class="path">~/termux</span><span class="cmd">$ ls -la</span></div>
+          <div class="line"><span class="out">:: files and directories revealed</span></div>
+          <div class="line"><span class="prompt">user@android</span><span class="path">~/termux</span><span class="cmd">$ <span class="cursor"></span></span></div>
+        </div>
+        <div class="chip-row">
+          <span class="chip">pkg</span><span class="chip">bash</span><span class="chip">python</span><span class="chip">git</span><span class="chip">storage</span><span class="chip">networking</span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section glass vault reveal" id="downloads">
+      <div class="section-head">
+        <div>
+          <h2>Download vault</h2>
+          <p>Two browser-generated files. Click once and the downloads are created instantly.</p>
+        </div>
+      </div>
+
+      <div class="vault-grid">
+        <div class="download-panel">
+          <h3 class="download-title">Instant file generator</h3>
+          <p class="download-copy">
+            These buttons build real downloadable text files inside the browser using Blob URLs.
+            No server, no placeholder links, no broken assets.
+          </p>
+          <div class="download-actions">
+            <button class="btn download-btn" data-file="first-step">
+              <span class="meta">
+                <span>Termux First Step (100+ Basic Commands)</span>
+                <small>TXT • command quickstart</small>
+              </span>
+              <span class="arrow">↘</span>
+            </button>
+            <button class="btn secondary download-btn" data-file="explanations">
+              <span class="meta">
+                <span>Commands Explanations &amp; Meanings</span>
+                <small>TXT • reference guide</small>
+              </span>
+              <span class="arrow">↘</span>
+            </button>
+          </div>
+
+          <div class="import-panel">
+            <h3>Import local file</h3>
+            <p>Select any .txt file from your device to preview it inside the page. This makes the hub easy to test, import, and reuse.</p>
+            <input class="file-input" id="fileInput" type="file" accept=".txt,text/plain" />
+            <div class="preview" id="preview">Imported file preview will appear here.</div>
+          </div>
+        </div>
+
+        <div class="list-panel glass">
+          <div class="row">
+            <span class="bullet"></span>
+            <div>
+              <strong>Offline-first structure</strong>
+              <span>Works directly from GitHub Pages. No external library dependency.</span>
+            </div>
+          </div>
+          <div class="row">
+            <span class="bullet"></span>
+            <div>
+              <strong>Animated cyberpunk UI</strong>
+              <span>Matrix rain, floating particles, glow edges, glitch titles, and ripple interactions.</span>
+            </div>
+          </div>
+          <div class="row">
+            <span class="bullet"></span>
+            <div>
+              <strong>Learning database ready</strong>
+              <span>Designed for future expansion with more command modules and lesson packs.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal" id="database">
+      <div class="section-head">
+        <div>
+          <h2>Command nodes</h2>
+          <p>Minimal technical descriptors for a clean, high-density learning interface.</p>
+        </div>
+      </div>
+
+      <div class="database" style="display:grid;">
+        <article class="card">
+          <span class="tag">system</span>
+          <h3>Package control</h3>
+          <p>Update, install, search, and maintain your Termux environment with precision.</p>
+          <div class="count">pkg / apt</div>
+        </article>
+        <article class="card">
+          <span class="tag">filesystem</span>
+          <h3>Navigation</h3>
+          <p>Traverse folders, inspect permissions, and manage files with core shell commands.</p>
+          <div class="count">ls / cd</div>
+        </article>
+        <article class="card">
+          <span class="tag">network</span>
+          <h3>Connectivity</h3>
+          <p>Fetch remote resources, test endpoints, and clone repositories securely.</p>
+          <div class="count">curl / git</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="footer reveal">
+      <div><strong>Termux Learning Hub</strong> • futuristic command reference</div>
+      <div>Designed for mobile-first learning and GitHub Pages deployment.</div>
+    </section>
+  </main>
+
+  <script>
+    const matrixCanvas = document.getElementById('matrix');
+    const mCtx = matrixCanvas.getContext('2d');
+    let mW, mH, columns, drops;
+
+    function resizeMatrix() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      mW = matrixCanvas.width = Math.floor(innerWidth * dpr);
+      mH = matrixCanvas.height = Math.floor(innerHeight * dpr);
+      matrixCanvas.style.width = innerWidth + 'px';
+      matrixCanvas.style.height = innerHeight + 'px';
+      mCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      columns = Math.floor(innerWidth / 18);
+      drops = new Array(columns).fill(0).map(() => Math.random() * innerHeight / 18);
+    }
+
+    const matrixChars = '01TERMUX[]{}<>/\\$#@!%&*+=-abcdefghijklmnopqrstuvwxyz0123456789';
+    function drawMatrix() {
+      mCtx.fillStyle = 'rgba(2,4,8,0.08)';
+      mCtx.fillRect(0, 0, innerWidth, innerHeight);
+      for (let i = 0; i < columns; i++) {
+        const text = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+        const x = i * 18;
+        const y = drops[i] * 18;
+        const hue = 138 + (i % 24) * 2;
+        mCtx.fillStyle = `hsla(${hue}, 100%, 65%, 0.58)`;
+        mCtx.font = 'bold 15px ui-monospace, monospace';
+        mCtx.fillText(text, x, y);
+        if (y > innerHeight && Math.random() > 0.985) drops[i] = 0;
+        drops[i]++;
+      }
+      requestAnimationFrame(drawMatrix);
+    }
+
+    const pCanvas = document.getElementById('particles');
+    const pCtx = pCanvas.getContext('2d');
+    let particles = [];
+
+    function resizeParticles() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      pCanvas.width = Math.floor(innerWidth * dpr);
+      pCanvas.height = Math.floor(innerHeight * dpr);
+      pCanvas.style.width = innerWidth + 'px';
+      pCanvas.style.height = innerHeight + 'px';
+      pCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const count = Math.max(24, Math.floor(innerWidth * innerHeight / 26000));
+      particles = Array.from({ length: count }, () => ({
+        x: Math.random() * innerWidth,
+        y: Math.random() * innerHeight,
+        r: Math.random() * 1.8 + 0.5,
+        vx: (Math.random() - 0.5) * 0.22,
+        vy: (Math.random() - 0.5) * 0.18,
+        a: Math.random() * 0.35 + 0.08
+      }));
+    }
+
+    function drawParticles() {
+      pCtx.clearRect(0, 0, innerWidth, innerHeight);
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < -20) p.x = innerWidth + 20;
+        if (p.x > innerWidth + 20) p.x = -20;
+        if (p.y < -20) p.y = innerHeight + 20;
+        if (p.y > innerHeight + 20) p.y = -20;
+        const g = pCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 8);
+        g.addColorStop(0, `rgba(102,255,176,${p.a})`);
+        g.addColorStop(0.4, `rgba(89,231,255,${p.a * 0.45})`);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        pCtx.fillStyle = g;
+        pCtx.beginPath();
+        pCtx.arc(p.x, p.y, p.r * 8, 0, Math.PI * 2);
+        pCtx.fill();
+      }
+      requestAnimationFrame(drawParticles);
+    }
+
+    function addRipple(e) {
+      const el = e.currentTarget;
+      const rect = el.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      const size = Math.max(rect.width, rect.height);
+      ripple.style.width = ripple.style.height = size + 'px';
+      ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+      ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+      el.appendChild(ripple);
+      ripple.addEventListener('animationend', () => ripple.remove());
+    }
+
+    function downloadTextFile(filename, content) {
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1200);
+    }
+
+    const commandGroups = [
+      { title: 'Core navigation', items: [
+        ['pwd', 'Print current directory'],
+        ['ls', 'List files and folders'],
+        ['ls -la', 'Show detailed list including hidden files'],
+        ['cd', 'Change directory'],
+        ['cd ..', 'Move one folder up'],
+        ['mkdir folder', 'Create a directory'],
+        ['touch file.txt', 'Create an empty file'],
+        ['cp source dest', 'Copy files or folders'],
+        ['mv source dest', 'Move or rename'],
+        ['rm file', 'Remove a file'],
+        ['rm -r folder', 'Remove a folder recursively'],
+        ['find . -name "*.txt"', 'Search files by name']
+      ]},
+      { title: 'Package management', items: [
+        ['pkg update', 'Refresh package lists'],
+        ['pkg upgrade', 'Upgrade installed packages'],
+        ['pkg install python', 'Install Python'],
+        ['pkg install git', 'Install Git'],
+        ['pkg install nano', 'Install Nano editor'],
+        ['pkg search nodejs', 'Search packages'],
+        ['pkg uninstall package', 'Remove a package'],
+        ['apt update', 'APT package index refresh'],
+        ['apt upgrade', 'APT package upgrade'],
+        ['dpkg -l', 'List installed Debian packages']
+      ]},
+      { title: 'Permissions & info', items: [
+        ['chmod +x script.sh', 'Make a script executable'],
+        ['chmod 755 file', 'Set common file permissions'],
+        ['chown user:group file', 'Change ownership'],
+        ['stat file', 'Show file metadata'],
+        ['du -sh *', 'Display folder sizes'],
+        ['df -h', 'Show disk usage'],
+        ['uname -a', 'Display system information'],
+        ['whoami', 'Show current user'],
+        ['id', 'Show user IDs'],
+        ['ps aux', 'Show running processes']
+      ]},
+      { title: 'Text handling', items: [
+        ['cat file.txt', 'Print file content'],
+        ['nano file.txt', 'Edit file in terminal'],
+        ['vim file.txt', 'Open file in Vim'],
+        ['grep "word" file.txt', 'Search content'],
+        ['sed', 'Stream editing tool'],
+        ['awk', 'Pattern and field processing'],
+        ['head file.txt', 'Show first lines'],
+        ['tail file.txt', 'Show last lines'],
+        ['sort file.txt', 'Sort file content'],
+        ['wc -l file.txt', 'Count lines']
+      ]},
+      { title: 'Networking', items: [
+        ['ping google.com', 'Test network reachability'],
+        ['curl https://example.com', 'Fetch URL content'],
+        ['wget URL', 'Download files from URL'],
+        ['ssh user@host', 'Remote shell access'],
+        ['scp file user@host:/path', 'Copy over SSH'],
+        ['netstat -tulpn', 'Inspect network sockets'],
+        ['ifconfig', 'Show interface info'],
+        ['ip a', 'Display IP addresses'],
+        ['nslookup domain.com', 'Query DNS'],
+        ['traceroute domain.com', 'Trace route path']
+      ]},
+      { title: 'Git workflow', items: [
+        ['git init', 'Create a new repository'],
+        ['git clone URL', 'Clone repository'],
+        ['git status', 'Show working tree status'],
+        ['git add .', 'Stage all changes'],
+        ['git commit -m "msg"', 'Create a commit'],
+        ['git log', 'Show commit history'],
+        ['git branch', 'List branches'],
+        ['git checkout branch', 'Switch branch'],
+        ['git pull', 'Fetch and merge updates'],
+        ['git push', 'Upload commits']
+      ]}
+    ];
+
+    const allCommands = commandGroups.flatMap(group => group.items.map(([cmd, meaning]) => ({ group: group.title, cmd, meaning })));
+
+    function buildFirstStepFile() {
+      const lines = [];
+      lines.push('TERMUX FIRST STEP (100+ BASIC COMMANDS)');
+      lines.push('=======================================');
+      lines.push('');
+      lines.push('Quick start notes:');
+      lines.push('- Run pkg update before installing tools.');
+      lines.push('- Use termux-setup-storage for storage access.');
+      lines.push('- Some commands need packages installed first.');
+      lines.push('');
+      commandGroups.forEach(group => {
+        lines.push(`[${group.title.toUpperCase()}]`);
+        group.items.forEach(([cmd], index) => {
+          lines.push(`${String(index + 1).padStart(2, '0')}. ${cmd}`);
+        });
+        lines.push('');
+      });
+      lines.push('Extra essentials');
+      lines.push('---------------');
+      lines.push('termux-setup-storage');
+      lines.push('clear');
+      lines.push('history');
+      lines.push('exit');
+      lines.push('man command');
+      lines.push('help');
+      lines.push('alias ll="ls -la"');
+      lines.push('echo "Hello Termux"');
+      lines.push('');
+      lines.push(`Total commands included: ${allCommands.length + 8}`);
+      lines.push('');
+      lines.push('Practice path: update -> install tools -> explore files -> edit -> run scripts -> use git.');
+      return lines.join('\n');
+    }
+
+    function buildExplanationsFile() {
+      const lines = [];
+      lines.push('COMMAND EXPLANATIONS & MEANINGS');
+      lines.push('===============================');
+      lines.push('');
+      allCommands.forEach((entry, i) => {
+        lines.push(`${String(i + 1).padStart(3, '0')}. ${entry.cmd}`);
+        lines.push(`     Meaning: ${entry.meaning}`);
+        lines.push(`     Group: ${entry.group}`);
+        lines.push('');
+      });
+      lines.push('Mini notes');
+      lines.push('----------');
+      lines.push('- Commands can behave differently depending on installed packages.');
+      lines.push('- Use man or --help for tool-specific details.');
+      lines.push('- Learn one category at a time for faster progress.');
+      return lines.join('\n');
+    }
+
+    document.querySelectorAll('.btn').forEach(btn => btn.addEventListener('click', addRipple));
+
+    document.querySelectorAll('.download-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const file = btn.dataset.file;
+        if (file === 'first-step') {
+          downloadTextFile('termux_first_step_100_plus_commands.txt', buildFirstStepFile());
+        } else {
+          downloadTextFile('termux_commands_explanations_meanings.txt', buildExplanationsFile());
+        }
+      });
+    });
+
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) {
+        preview.textContent = 'Imported file preview will appear here.';
+        return;
+      }
+      const text = await file.text();
+      preview.textContent = text.slice(0, 6000) || '[Empty file]';
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('in');
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    function animateCount(el, target) {
+      const duration = 1300;
+      const start = performance.now();
+      function tick(now) {
+        const p = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased);
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+    document.querySelectorAll('[data-count]').forEach(el => {
+      animateCount(el, parseInt(el.dataset.count, 10));
+    });
+
+    resizeMatrix();
+    resizeParticles();
+    drawMatrix();
+    drawParticles();
+
+    addEventListener('resize', () => {
+      resizeMatrix();
+      resizeParticles();
+    }, { passive: true });
+  </script>
+</body>
+</html>
